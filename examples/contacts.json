@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "contacts": [
+    {
+      "first_name": "Дмитрий",
+      "last_name": "Козлов",
+      "phone": "+7 (900) 321-45-67",
+      "email": "dmitry@example.com",
+      "company": "Точка роста",
+      "city": "Санкт-Петербург",
+      "category": "work",
+      "birthday": "1996-08-10",
+      "notes": "Поможет с организацией встречи."
+    },
+    {
+      "first_name": "Мария",
+      "last_name": "Лебедева",
+      "phone": "+7 (900) 111-22-33",
+      "email": "maria@example.com",
+      "company": "Мастерская Лист",
+      "city": "Екатеринбург",
+      "category": "friends",
+      "birthday": "1999-06-20",
+      "notes": "Отправить фотографии с поездки."
+    }
+  ]
+}

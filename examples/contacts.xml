@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<contacts version="1">
+  <contact>
+    <first_name>Анна</first_name>
+    <last_name>Соколова</last_name>
+    <phone>+7 (900) 123-45-67</phone>
+    <email>anna@example.com</email>
+    <company>Студия Форма</company>
+    <city>Екатеринбург</city>
+    <category>work</category>
+    <birthday>1998-04-12</birthday>
+    <notes>Обсудить новый проект.</notes>
+  </contact>
+  <contact>
+    <first_name>Михаил</first_name>
+    <last_name>Волков</last_name>
+    <phone>+7 (900) 765-43-21</phone>
+    <email>mikhail@example.com</email>
+    <company>Бюро Север</company>
+    <city>Казань</city>
+    <category>friends</category>
+    <birthday>1997-09-25</birthday>
+    <notes>Познакомились на конференции.</notes>
+  </contact>
+  <contact>
+    <first_name>Елена</first_name>
+    <last_name>Морозова</last_name>
+    <phone>+7 (900) 555-12-34</phone>
+    <email>elena@example.com</email>
+    <company/>
+    <city>Москва</city>
+    <category>family</category>
+    <birthday>1995-02-18</birthday>
+    <notes>Позвонить в выходные.</notes>
+  </contact>
+</contacts>
