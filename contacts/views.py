@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils.http import content_disposition_header
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_http_methods
 
@@ -15,7 +16,7 @@ from .storage import list_stored_files, read_stored_file, save_contact, save_upl
 def _attachment(content, file_format, filename):
     content_type = "application/xml" if file_format == "xml" else "application/json"
     response = HttpResponse(content, content_type=f"{content_type}; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="{filename}.{file_format}"'
+    response["Content-Disposition"] = content_disposition_header(True, f"{filename}.{file_format}")
     return response
 
 
@@ -79,11 +80,11 @@ def create_contact(request):
 @never_cache
 @require_http_methods(["GET", "POST"])
 def import_contacts(request):
-    form = UploadForm(request.POST or None, request.FILES or None)
+    form = UploadForm(request.POST, request.FILES) if request.method == "POST" else UploadForm()
     if request.method == "POST" and form.is_valid():
         try:
             filename = save_uploaded_file(form.cleaned_data["file"])
-            stored_file, content = read_stored_file(filename)
+            stored_file, _content = read_stored_file(filename)
         except InvalidContactFile as error:
             form.add_error("file", str(error))
         except OSError:

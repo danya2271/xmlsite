@@ -29,7 +29,9 @@ def _unique_object(pairs):
 def _parse_json(text):
     try:
         payload = json.loads(text, object_pairs_hook=_unique_object)
-    except (json.JSONDecodeError, RecursionError) as error:
+    except InvalidContactFile:
+        raise
+    except (ValueError, RecursionError) as error:
         raise InvalidContactFile("Некорректный JSON. Проверьте синтаксис файла.") from error
     if not isinstance(payload, dict) or set(payload) != {"version", "contacts"}:
         raise InvalidContactFile("JSON должен содержать только поля version и contacts.")

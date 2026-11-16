@@ -73,11 +73,17 @@ class ContactForm(forms.Form):
         cleaned = super().clean()
         if not cleaned.get("phone") and not cleaned.get("email"):
             raise forms.ValidationError("Укажите хотя бы один способ связи: телефон или email.")
-        for field_name, value in cleaned.items():
+        for field_name, value in list(cleaned.items()):
             if isinstance(value, str) and any(
-                ord(character) < 32 and character not in "\n\r\t" for character in value
+                not (
+                    character in "\n\r\t"
+                    or 0x20 <= ord(character) <= 0xD7FF
+                    or 0xE000 <= ord(character) <= 0xFFFD
+                    or 0x10000 <= ord(character) <= 0x10FFFF
+                )
+                for character in value
             ):
-                self.add_error(field_name, "Текст содержит недопустимые управляющие символы.")
+                self.add_error(field_name, "Текст содержит недопустимые символы Unicode или управляющие символы.")
         return cleaned
 
     def to_contact(self):

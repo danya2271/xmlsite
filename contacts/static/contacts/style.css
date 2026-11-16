@@ -1,5 +1,3 @@
-@import url("data:text/css,");
-
 :root {
   --page: #f7f8fb;
   --white: #fff;
@@ -111,7 +109,7 @@ summary::-webkit-details-marker { display: none; }
 .search-field input::placeholder { color: #a2aaba; }
 .filter-bar select { border: 1px solid #e7eaf1; border-radius: 7px; background: white; color: #7d879a; padding: 9px 26px 9px 12px; font-size: 10px; max-width: 170px; }
 .filter-bar .button { font-size: 10px; }
-.table-scroll { overflow-x: auto; }
+.table-scroll { position: relative; overflow-x: auto; }
 .contacts-table { width: 100%; border-collapse: collapse; white-space: nowrap; text-align: left; }
 .contacts-table th { font-size: 9px; color: #939caf; font-weight: 500; padding: 13px 15px; background: #fafbfe; border-top: 1px solid #f0f2f7; border-bottom: 1px solid #f0f2f7; }
 .contacts-table th:first-child, .contacts-table td:first-child { padding-left: 23px; }

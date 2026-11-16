@@ -1,5 +1,4 @@
 import logging
-import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +11,6 @@ from .domain import Contact
 
 
 logger = logging.getLogger(__name__)
-SAFE_FILENAME = re.compile(r"[a-f0-9]{32}\.(xml|json)\Z")
 
 
 @dataclass(frozen=True)
@@ -67,14 +65,19 @@ def save_uploaded_file(uploaded_file):
 
 
 def read_stored_file(filename):
-    if not SAFE_FILENAME.fullmatch(filename):
+    if (
+        Path(filename).name != filename
+        or "\\" in filename
+        or filename.startswith(".")
+        or Path(filename).suffix.lower() not in {".xml", ".json"}
+    ):
         raise FileNotFoundError("Unknown contact file.")
     path = storage_directory() / filename
     if path.is_symlink() or not path.is_file():
         raise FileNotFoundError("Unknown contact file.")
     with path.open("rb") as source:
         content = source.read(settings.MAX_CONTACT_FILE_BYTES + 1)
-    file_format = path.suffix[1:]
+    file_format = path.suffix[1:].lower()
     contacts = parse_contacts(content, file_format)
     metadata = path.stat()
     return StoredFile(
@@ -94,7 +97,7 @@ def list_stored_files():
         if path.suffix.lower() not in {".xml", ".json"}:
             continue
         try:
-            stored_file, content = read_stored_file(path.name)
+            stored_file, _content = read_stored_file(path.name)
             files.append(stored_file)
         except (OSError, InvalidContactFile):
             logger.warning("Cannot read contact file %s", path.name)
