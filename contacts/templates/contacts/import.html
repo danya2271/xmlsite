@@ -1,0 +1,25 @@
+{% extends 'contacts/base.html' %}
+{% block title %}Импорт контактов{% endblock %}
+{% block breadcrumb %}Импорт данных{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'contacts:index' %}">← Все контакты</a>
+<section class="page-heading"><div><div class="eyebrow">ВСЕ СВЯЗИ — В ОДНОМ МЕСТЕ</div><h1>Переезжаем налегке<span>.</span></h1><p>Загрузите файл с контактами. Остальное мы берём на себя.</p></div></section>
+<div class="editor-layout"><section class="panel editor-panel"><div class="panel-heading"><h2>Импорт контактов</h2><span class="format-pills"><span>XML</span><span>JSON</span></span></div><form method="post" enctype="multipart/form-data" class="upload-form" novalidate>{% csrf_token %}{% if form.non_field_errors %}<div class="notice error" role="alert">{{ form.non_field_errors }}</div>{% endif %}<div class="drop-zone" id="drop-zone"><span class="upload-icon"><svg class="icon"><use href="#i-upload"/></svg></span><h3>Перетащите файл сюда</h3><p>или выберите его на компьютере</p><label for="contact-file" class="button button-secondary file-picker">Выбрать файл</label>{{ form.file }}<div id="selected-filename" class="selected-filename" aria-live="polite">Файл не выбран</div><span class="drop-hint">XML или JSON · до 1 МБ · кодировка UTF-8</span></div>{% if form.file.errors %}<div class="notice error upload-errors" role="alert">{{ form.file.errors }}</div>{% endif %}<div class="privacy-note"><svg class="icon"><use href="#i-shield"/></svg><p>Файл проходит проверку структуры и всех контактов. Невалидные файлы удаляются, а имена для хранения генерируются автоматически.</p></div><div class="form-actions"><a class="button button-secondary" href="{% url 'contacts:index' %}">Отмена</a><button class="button button-primary" type="submit"><svg class="icon"><use href="#i-upload"/></svg>Импортировать</button></div></form></section><aside class="editor-note"><span class="stat-icon violet"><svg class="icon"><use href="#i-file"/></svg></span><h3>Начните с примера</h3><p>Скачайте готовый файл, посмотрите на структуру и замените данные своими.</p><a class="sample-link" href="{% url 'contacts:sample' 'xml' %}"><svg class="icon"><use href="#i-download"/></svg>Пример XML</a><a class="sample-link" href="{% url 'contacts:sample' 'json' %}"><svg class="icon"><use href="#i-download"/></svg>Пример JSON</a><hr><h3>Что важно знать</h3><p>Не более 500 контактов в файле. Обязательны имя, фамилия и хотя бы один способ связи. Импорт добавляет записи, а не заменяет существующие.</p></aside></div>
+<section class="panel format-guide" id="format"><div class="panel-heading"><h2>Как устроен файл</h2><span class="subtle">Версия формата 1</span></div><div class="guide-body"><p>Основной вариант — <strong>информация о контактах в XML</strong>. Дополнительно можно импортировать и экспортировать те же данные в JSON. Для каждого контакта доступны поля <code>first_name</code>, <code>last_name</code>, <code>phone</code>, <code>email</code>, <code>company</code>, <code>city</code>, <code>category</code>, <code>birthday</code>, <code>notes</code>.</p><div class="code-grid"><div><span class="code-label">XML</span><pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;contacts version="1"&gt;
+  &lt;contact&gt;
+    &lt;first_name&gt;Анна&lt;/first_name&gt;
+    &lt;last_name&gt;Соколова&lt;/last_name&gt;
+    &lt;email&gt;anna@example.com&lt;/email&gt;
+    &lt;category&gt;work&lt;/category&gt;
+  &lt;/contact&gt;
+&lt;/contacts&gt;</code></pre></div><div><span class="code-label">JSON</span><pre><code>{
+  "version": 1,
+  "contacts": [{
+    "first_name": "Анна",
+    "last_name": "Соколова",
+    "email": "anna@example.com",
+    "category": "work"
+  }]
+}</code></pre></div></div><p class="guide-footnote">Группы: <code>work</code>, <code>friends</code>, <code>family</code>, <code>other</code> (по умолчанию). Дата рождения: <code>ГГГГ-ММ-ДД</code>. Все значения полей контакта — строки. Неизвестные поля, повторяющиеся ключи и XML-сущности не допускаются.</p></div></section>
+{% endblock %}
