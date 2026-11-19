@@ -1,20 +1,371 @@
 {% extends 'contacts/base.html' %}
+
 {% block content %}
-<section class="page-heading"><div><div class="eyebrow">ВАША КОНТАКТНАЯ КНИГА</div><h1>Люди, которые важны<span>.</span></h1><p>Храните связи, а не разрозненные записи.</p></div><div class="heading-actions"><a class="button button-secondary" href="{% url 'contacts:import' %}"><svg class="icon"><use href="#i-upload"/></svg>Импорт</a><a class="button button-primary" href="{% url 'contacts:create' %}"><svg class="icon"><use href="#i-add"/></svg>Добавить контакт</a></div></section>
-<section class="stats-grid" aria-label="Статистика хранилища">
-  <div class="stat-card"><div class="stat-label">Всего контактов<span class="stat-icon blue"><svg class="icon"><use href="#i-people"/></svg></span></div><div class="stat-number">{{ total_contacts }}</div><div class="stat-caption">Все нужные люди в одном месте</div></div>
-  <div class="stat-card"><div class="stat-label">Файлов в библиотеке<span class="stat-icon violet"><svg class="icon"><use href="#i-file"/></svg></span></div><div class="stat-number">{{ files|length }}</div><div class="stat-caption"><span class="tiny-dot violet-dot"></span> {{ xml_count }} XML <span class="caption-divider">/</span> {{ json_count }} JSON</div></div>
-  <div class="stat-card accent-card"><div class="stat-label">Открытые форматы<span class="stat-icon green"><svg class="icon"><use href="#i-shield"/></svg></span></div><div class="stat-word">XML <span>&</span> JSON</div><div class="stat-caption">Проверяем каждый файл перед импортом</div></div>
-</section>
-{% if file_errors %}<div class="notice error" role="alert"><div><strong>Некоторые файлы не удалось прочитать.</strong>{% for error in file_errors %}<p>{{ error }}</p>{% endfor %}</div></div>{% endif %}
-<section class="contacts-panel panel">
-  <div class="panel-heading"><div class="section-title"><h2>Все контакты</h2><span class="count-badge">{{ total_contacts }}</span></div><details class="export-menu"><summary class="button button-quiet"><svg class="icon"><use href="#i-download"/></svg>Экспорт всех <span class="chevron">⌄</span></summary><div class="dropdown"><a href="{% url 'contacts:export' 'xml' %}">Скачать XML</a><a href="{% url 'contacts:export' 'json' %}">Скачать JSON</a></div></details></div>
-  <form method="get" class="filter-bar" role="search"><div class="search-field"><svg class="icon"><use href="#i-search"/></svg><label class="visually-hidden" for="search">Поиск по контактам</label><input id="search" type="search" name="q" value="{{ query }}" maxlength="100" placeholder="Найти по имени, телефону или компании…"></div><label class="visually-hidden" for="category">Группа</label><select name="category" id="category"><option value="">Все группы</option>{% for key, label, count in groups %}<option value="{{ key }}" {% if category == key %}selected{% endif %}>{{ label }} · {{ count }}</option>{% endfor %}</select><label class="visually-hidden" for="format">Формат</label><select name="format" id="format"><option value="">Все форматы</option><option value="xml" {% if selected_format == 'xml' %}selected{% endif %}>XML</option><option value="json" {% if selected_format == 'json' %}selected{% endif %}>JSON</option></select><button class="button button-secondary" type="submit">Найти</button></form>
-  {% if page_obj.object_list %}
-  <div class="table-scroll"><table class="contacts-table"><thead><tr><th scope="col">Имя и фамилия</th><th scope="col">Контактные данные</th><th scope="col">Компания / Город</th><th scope="col">Группа</th><th scope="col">Файл</th><th scope="col"><span class="visually-hidden">Подробности</span></th></tr></thead><tbody>{% for row in page_obj %}<tr><td><div class="person"><span class="person-avatar avatar-{{ row.contact.category }}">{{ row.contact.initials }}</span><div><strong>{{ row.contact.full_name }}</strong>{% if row.contact.birthday %}<span>День рождения: {{ row.contact.birthday }}</span>{% else %}<span>Контакт в вашей книге</span>{% endif %}</div></div></td><td><div class="cell-lines">{% if row.contact.email %}<a href="mailto:{{ row.contact.email }}">{{ row.contact.email }}</a>{% endif %}{% if row.contact.phone %}<span>{{ row.contact.phone }}</span>{% endif %}</div></td><td><div class="cell-lines"><span class="primary-text">{{ row.contact.company|default:'—' }}</span><span>{{ row.contact.city|default:'Город не указан' }}</span></div></td><td><span class="group-tag group-{{ row.contact.category }}">{{ row.contact.category_label }}</span></td><td><a class="file-tag {{ row.file.file_format }}" href="{% url 'contacts:download' row.file.name %}" title="Скачать исходный файл {{ row.file.name }}">{{ row.file.file_format|upper }}</a></td><td><details class="contact-details"><summary aria-label="Подробности: {{ row.contact.full_name }}">•••</summary><div class="contact-popover"><strong>{{ row.contact.full_name }}</strong><p>{{ row.contact.notes|default:'Заметок пока нет.'|linebreaksbr }}</p><a href="{% url 'contacts:download' row.file.name %}">Скачать исходный файл</a></div></details></td></tr>{% endfor %}</tbody></table></div>
-  <div class="table-footer"><span>Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} из {{ page_obj.paginator.count }}</span><nav class="pagination" aria-label="Страницы контактов">{% if page_obj.has_previous %}<a href="{% querystring page=page_obj.previous_page_number %}" aria-label="Предыдущая страница">←</a>{% endif %}<span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="{% querystring page=page_obj.next_page_number %}" aria-label="Следующая страница">→</a>{% endif %}</nav></div>
-  {% elif query or category or selected_format %}<div class="empty-state"><span class="empty-icon"><svg class="icon"><use href="#i-search"/></svg></span><h3>Ничего не нашлось</h3><p>Попробуйте другой запрос или сбросьте фильтры.</p><a class="button button-secondary" href="{% url 'contacts:index' %}">Сбросить фильтры</a></div>
-  {% else %}<div class="empty-state"><div class="empty-art"><span class="art-card art-card-back"></span><span class="art-card art-card-front"><span class="art-avatar"><svg class="icon"><use href="#i-people"/></svg></span><span class="art-line"></span><span class="art-line short"></span></span><span class="art-plus">+</span></div><h3>Здесь начнётся ваша история связей</h3><p>На сервере пока нет файлов с контактами.<br>Добавьте первого человека или импортируйте готовый файл.</p><a class="button button-primary" href="{% url 'contacts:create' %}"><svg class="icon"><use href="#i-add"/></svg>Создать первый контакт</a><a class="empty-link" href="{% url 'contacts:sample' 'xml' %}">Скачать пример XML <span>↗</span></a></div>{% endif %}
-</section>
-<section class="bottom-grid"><div class="panel file-library" id="files"><div class="panel-heading"><div class="section-title"><h2>Библиотека файлов</h2><span class="count-badge">{{ files|length }}</span></div><svg class="icon muted"><use href="#i-file"/></svg></div>{% if files %}<div class="file-list">{% for file in files %}<div class="file-row"><span class="document-icon {{ file.file_format }}"><svg class="icon"><use href="#i-code"/></svg></span><div class="file-info"><strong title="{{ file.name }}">{{ file.name|slice:':12' }}…{{ file.file_format }}</strong><span>{{ file.contacts|length }} конт. · {{ file.size|filesizeformat }} · {{ file.modified|date:'d.m.Y H:i' }}</span></div><a class="icon-button" href="{% url 'contacts:download' file.name %}" aria-label="Скачать {{ file.name }}"><svg class="icon"><use href="#i-download"/></svg></a></div>{% endfor %}</div>{% else %}<div class="library-empty"><svg class="icon"><use href="#i-file"/></svg><p>Здесь появятся сохранённые<br>и импортированные файлы</p></div>{% endif %}<div class="library-footer"><span class="tiny-dot"></span>Файлы хранятся в папке <code>data/contacts/</code></div></div><div class="import-card"><div class="eyebrow">ПЕРЕНОСИТЕ БЕЗ ГРАНИЦ</div><div class="import-card-icon"><span>&lt;/&gt;</span><svg class="icon"><use href="#i-arrow"/></svg><span>{ }</span></div><h2>Контакты уже есть?<br>Не вводите их заново.</h2><p>Загрузите XML или JSON — мы проверим структуру и соберём все записи в удобную книгу.</p><a href="{% url 'contacts:import' %}">Импортировать контакты <svg class="icon"><use href="#i-arrow"/></svg></a><div class="import-card-caption">До 1 МБ · До 500 контактов в файле · UTF-8</div></div></section>
+  <section class="page-heading">
+    <div>
+      <div class="eyebrow">ВАША КОНТАКТНАЯ КНИГА</div>
+      <h1>Люди, которые важны<span>.</span></h1>
+      <p>Храните связи, а не разрозненные записи.</p>
+    </div>
+
+    <div class="heading-actions">
+      <a class="button button-secondary" href="{% url 'contacts:import' %}">
+        <svg class="icon">
+          <use href="#i-upload"/>
+        </svg>
+        Импорт
+      </a>
+      <a class="button button-primary" href="{% url 'contacts:create' %}">
+        <svg class="icon">
+          <use href="#i-add"/>
+        </svg>
+        Добавить контакт
+      </a>
+    </div>
+  </section>
+
+  <section class="stats-grid" aria-label="Статистика хранилища">
+    <div class="stat-card">
+      <div class="stat-label">
+        Всего контактов
+        <span class="stat-icon blue">
+          <svg class="icon">
+            <use href="#i-people"/>
+          </svg>
+        </span>
+      </div>
+      <div class="stat-number">{{ total_contacts }}</div>
+      <div class="stat-caption">Все нужные люди в одном месте</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">
+        Файлов в библиотеке
+        <span class="stat-icon violet">
+          <svg class="icon">
+            <use href="#i-file"/>
+          </svg>
+        </span>
+      </div>
+      <div class="stat-number">{{ files|length }}</div>
+      <div class="stat-caption">
+        <span class="tiny-dot violet-dot"></span>
+        {{ xml_count }} XML <span class="caption-divider">/</span> {{ json_count }} JSON
+      </div>
+    </div>
+
+    <div class="stat-card accent-card">
+      <div class="stat-label">
+        Открытые форматы
+        <span class="stat-icon green">
+          <svg class="icon">
+            <use href="#i-shield"/>
+          </svg>
+        </span>
+      </div>
+      <div class="stat-word">XML <span>&</span> JSON</div>
+      <div class="stat-caption">Проверяем каждый файл перед импортом</div>
+    </div>
+  </section>
+
+  {% if file_errors %}
+    <div class="notice error" role="alert">
+      <div>
+        <strong>Некоторые файлы не удалось прочитать.</strong>
+        {% for error in file_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="contacts-panel panel">
+    <div class="panel-heading">
+      <div class="section-title">
+        <h2>Все контакты</h2>
+        <span class="count-badge">{{ total_contacts }}</span>
+      </div>
+
+      <details class="export-menu">
+        <summary class="button button-quiet">
+          <svg class="icon">
+            <use href="#i-download"/>
+          </svg>
+          Экспорт всех
+          <span class="chevron">⌄</span>
+        </summary>
+        <div class="dropdown">
+          <a href="{% url 'contacts:export' 'xml' %}">Скачать XML</a>
+          <a href="{% url 'contacts:export' 'json' %}">Скачать JSON</a>
+        </div>
+      </details>
+    </div>
+
+    <form method="get" class="filter-bar" role="search">
+      <div class="search-field">
+        <svg class="icon">
+          <use href="#i-search"/>
+        </svg>
+        <label class="visually-hidden" for="search">Поиск по контактам</label>
+        <input
+          id="search"
+          type="search"
+          name="q"
+          value="{{ query }}"
+          maxlength="100"
+          placeholder="Найти по имени, телефону или компании…"
+        >
+      </div>
+
+      <label class="visually-hidden" for="category">Группа</label>
+      <select name="category" id="category">
+        <option value="">Все группы</option>
+        {% for key, label, count in groups %}
+          <option value="{{ key }}" {% if category == key %}selected{% endif %}>
+            {{ label }} · {{ count }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <label class="visually-hidden" for="format">Формат</label>
+      <select name="format" id="format">
+        <option value="">Все форматы</option>
+        <option value="xml" {% if selected_format == 'xml' %}selected{% endif %}>XML</option>
+        <option value="json" {% if selected_format == 'json' %}selected{% endif %}>JSON</option>
+      </select>
+
+      <button class="button button-secondary" type="submit">Найти</button>
+    </form>
+
+    {% if page_obj.object_list %}
+      <div class="table-scroll">
+        <table class="contacts-table">
+          <thead>
+            <tr>
+              <th scope="col">Имя и фамилия</th>
+              <th scope="col">Контактные данные</th>
+              <th scope="col">Компания / Город</th>
+              <th scope="col">Группа</th>
+              <th scope="col">Файл</th>
+              <th scope="col">
+                <span class="visually-hidden">Подробности</span>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for row in page_obj %}
+              <tr>
+                <td>
+                  <div class="person">
+                    <span class="person-avatar avatar-{{ row.contact.category }}">
+                      {{ row.contact.initials }}
+                    </span>
+                    <div>
+                      <strong>{{ row.contact.full_name }}</strong>
+                      {% if row.contact.birthday %}
+                        <span>День рождения: {{ row.contact.birthday }}</span>
+                      {% else %}
+                        <span>Контакт в вашей книге</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="cell-lines">
+                    {% if row.contact.email %}
+                      <a href="mailto:{{ row.contact.email }}">{{ row.contact.email }}</a>
+                    {% endif %}
+                    {% if row.contact.phone %}
+                      <span>{{ row.contact.phone }}</span>
+                    {% endif %}
+                  </div>
+                </td>
+
+                <td>
+                  <div class="cell-lines">
+                    <span class="primary-text">{{ row.contact.company|default:'—' }}</span>
+                    <span>{{ row.contact.city|default:'Город не указан' }}</span>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="group-tag group-{{ row.contact.category }}">
+                    {{ row.contact.category_label }}
+                  </span>
+                </td>
+
+                <td>
+                  <a
+                    class="file-tag {{ row.file.file_format }}"
+                    href="{% url 'contacts:download' row.file.name %}"
+                    title="Скачать исходный файл {{ row.file.name }}"
+                  >
+                    {{ row.file.file_format|upper }}
+                  </a>
+                </td>
+
+                <td>
+                  <details class="contact-details">
+                    <summary aria-label="Подробности: {{ row.contact.full_name }}">•••</summary>
+                    <div class="contact-popover">
+                      <strong>{{ row.contact.full_name }}</strong>
+                      <p>{{ row.contact.notes|default:'Заметок пока нет.'|linebreaksbr }}</p>
+                      <a href="{% url 'contacts:download' row.file.name %}">Скачать исходный файл</a>
+                    </div>
+                  </details>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <span>
+          Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} из {{ page_obj.paginator.count }}
+        </span>
+        <nav class="pagination" aria-label="Страницы контактов">
+          {% if page_obj.has_previous %}
+            <a
+              href="{% querystring page=page_obj.previous_page_number %}"
+              aria-label="Предыдущая страница"
+            >
+              ←
+            </a>
+          {% endif %}
+
+          <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+          {% if page_obj.has_next %}
+            <a
+              href="{% querystring page=page_obj.next_page_number %}"
+              aria-label="Следующая страница"
+            >
+              →
+            </a>
+          {% endif %}
+        </nav>
+      </div>
+    {% elif query or category or selected_format %}
+      <div class="empty-state">
+        <span class="empty-icon">
+          <svg class="icon">
+            <use href="#i-search"/>
+          </svg>
+        </span>
+        <h3>Ничего не нашлось</h3>
+        <p>Попробуйте другой запрос или сбросьте фильтры.</p>
+        <a class="button button-secondary" href="{% url 'contacts:index' %}">Сбросить фильтры</a>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-art">
+          <span class="art-card art-card-back"></span>
+          <span class="art-card art-card-front">
+            <span class="art-avatar">
+              <svg class="icon">
+                <use href="#i-people"/>
+              </svg>
+            </span>
+            <span class="art-line"></span>
+            <span class="art-line short"></span>
+          </span>
+          <span class="art-plus">+</span>
+        </div>
+
+        <h3>Здесь начнётся ваша история связей</h3>
+        <p>
+          На сервере пока нет файлов с контактами.<br>
+          Добавьте первого человека или импортируйте готовый файл.
+        </p>
+        <a class="button button-primary" href="{% url 'contacts:create' %}">
+          <svg class="icon">
+            <use href="#i-add"/>
+          </svg>
+          Создать первый контакт
+        </a>
+        <a class="empty-link" href="{% url 'contacts:sample' 'xml' %}">
+          Скачать пример XML <span>↗</span>
+        </a>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="bottom-grid">
+    <div class="panel file-library" id="files">
+      <div class="panel-heading">
+        <div class="section-title">
+          <h2>Библиотека файлов</h2>
+          <span class="count-badge">{{ files|length }}</span>
+        </div>
+        <svg class="icon muted">
+          <use href="#i-file"/>
+        </svg>
+      </div>
+
+      {% if files %}
+        <div class="file-list">
+          {% for file in files %}
+            <div class="file-row">
+              <span class="document-icon {{ file.file_format }}">
+                <svg class="icon">
+                  <use href="#i-code"/>
+                </svg>
+              </span>
+              <div class="file-info">
+                <strong title="{{ file.name }}">{{ file.name|slice:':12' }}…{{ file.file_format }}</strong>
+                <span>
+                  {{ file.contacts|length }} конт. · {{ file.size|filesizeformat }} ·
+                  {{ file.modified|date:'d.m.Y H:i' }}
+                </span>
+              </div>
+              <a
+                class="icon-button"
+                href="{% url 'contacts:download' file.name %}"
+                aria-label="Скачать {{ file.name }}"
+              >
+                <svg class="icon">
+                  <use href="#i-download"/>
+                </svg>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="library-empty">
+          <svg class="icon">
+            <use href="#i-file"/>
+          </svg>
+          <p>Здесь появятся сохранённые<br>и импортированные файлы</p>
+        </div>
+      {% endif %}
+
+      <div class="library-footer">
+        <span class="tiny-dot"></span>
+        Файлы хранятся в папке <code>data/contacts/</code>
+      </div>
+    </div>
+
+    <div class="import-card">
+      <div class="eyebrow">ПЕРЕНОСИТЕ БЕЗ ГРАНИЦ</div>
+      <div class="import-card-icon">
+        <span>&lt;/&gt;</span>
+        <svg class="icon">
+          <use href="#i-arrow"/>
+        </svg>
+        <span>{ }</span>
+      </div>
+      <h2>Контакты уже есть?<br>Не вводите их заново.</h2>
+      <p>Загрузите XML или JSON — мы проверим структуру и соберём все записи в удобную книгу.</p>
+      <a href="{% url 'contacts:import' %}">
+        Импортировать контакты
+        <svg class="icon">
+          <use href="#i-arrow"/>
+        </svg>
+      </a>
+      <div class="import-card-caption">До 1 МБ · До 500 контактов в файле · UTF-8</div>
+    </div>
+  </section>
 {% endblock %}
