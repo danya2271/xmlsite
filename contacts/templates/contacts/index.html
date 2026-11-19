@@ -116,7 +116,7 @@
 
     <form method="get" class="filter-bar" role="search">
       <input type="hidden" name="source" value="{{ source }}">
-      <div class="search-field">
+      {% if source == 'file' %}<div class="search-field">
         <svg class="icon">
           <use href="#i-search"/>
         </svg>
@@ -129,7 +129,7 @@
           maxlength="100"
           placeholder="Найти по имени, телефону или компании…"
         >
-      </div>
+      </div>{% endif %}
 
       <label class="visually-hidden" for="category">Группа</label>
       <select name="category" id="category">
