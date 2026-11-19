@@ -18,6 +18,15 @@ Django-приложение для ввода, хранения, импорта,
 - Явные сообщения, если файлов нет, поиск ничего не нашёл, данные невалидны или файл недоступен.
 - Готовые примеры и автоматические тесты, запускаемые также в GitHub Actions.
 
+## Развёртывание на бесплатном Netrun
+
+1. Отправьте репозиторий GitHub `danya2271/xmlsite` в Netrun через **Deploy from GitHub**.
+2. Укажите команду сборки `python manage.py migrate --noinput && python manage.py collectstatic --noinput`.
+3. Укажите команду запуска `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`.
+4. Добавьте переменные окружения `DJANGO_DEBUG=false`, `DJANGO_SECRET_KEY` (случайная строка от 50 символов), `DJANGO_ALLOWED_HOSTS=<домен Netrun>`, `DJANGO_CSRF_TRUSTED_ORIGINS=https://<домен Netrun>`, `DJANGO_TRUST_PROXY=true`.
+
+На Netrun база SQLite и файлы контактов автоматически используют постоянную папку `/data`, поэтому не исчезают после нового деплоя. Бесплатный тариф может усыплять приложение после простоя.
+
 ## Быстрый запуск
 
 Нужен Python **3.12 или новее**. Проверено на Python 3.14.

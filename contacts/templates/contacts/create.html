@@ -1,16 +1,16 @@
 {% extends 'contacts/base.html' %}
 
-{% block title %}Новый контакт{% endblock %}
-{% block breadcrumb %}Новый контакт{% endblock %}
+{% block title %}{% if editing %}Редактирование{% else %}Новый контакт{% endif %}{% endblock %}
+{% block breadcrumb %}{% if editing %}Редактирование{% else %}Новый контакт{% endif %}{% endblock %}
 
 {% block content %}
   <a class="back-link" href="{% url 'contacts:index' %}">← Все контакты</a>
 
   <section class="page-heading">
     <div>
-      <div class="eyebrow">НОВАЯ СВЯЗЬ</div>
-      <h1>Давайте познакомимся<span>.</span></h1>
-      <p>Добавьте контакт — мы сохраним его в отдельный файл.</p>
+      <div class="eyebrow">{% if editing %}КОНТАКТ SQLITE{% else %}НОВАЯ СВЯЗЬ{% endif %}</div>
+      <h1>{% if editing %}Изменить контакт{% else %}Давайте познакомимся{% endif %}<span>.</span></h1>
+      <p>{% if editing %}Проверьте данные и сохраните изменения.{% else %}Выберите хранилище для нового контакта.{% endif %}</p>
     </div>
   </section>
 
@@ -21,7 +21,7 @@
         <span class="required-caption">* Обязательные поля</span>
       </div>
 
-      <form method="post" class="contact-form" novalidate>
+      <form method="post" class="contact-form" novalidate data-contact-form>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -32,7 +32,9 @@
           {% for field in form %}
             <div
               class="form-field
-                {% if field.name == 'notes' or field.name == 'file_format' %}full-width{% endif %}
+                {% if field.name == 'notes' or field.name == 'file_format' or field.name == 'storage_target' %}full-width{% endif %}
+                {% if field.name == 'file_format' %}file-format-field{% endif %}
+                {% if field.name == 'storage_target' %}storage-target-field{% endif %}
                 {% if field.errors %}has-error{% endif %}"
             >
               <label for="{{ field.id_for_label }}">
@@ -45,11 +47,8 @@
                 <span class="field-hint">Укажите телефон или электронную почту.</span>
               {% endif %}
 
-              {% if field.name == 'file_format' %}
-                <span class="field-hint">
-                  XML — основной формат варианта 04. JSON тоже поддерживается.
-                </span>
-              {% endif %}
+              {% if field.name == 'file_format' %}<span class="field-hint">Выберите XML или JSON.</span>{% endif %}
+              {% if field.name == 'storage_target' %}<span class="field-hint">SQLite позволяет искать, редактировать и удалять записи.</span>{% endif %}
 
               {% if field.errors %}
                 <div class="field-errors" role="alert">{{ field.errors }}</div>
@@ -59,12 +58,12 @@
         </div>
 
         <div class="form-actions">
-          <a class="button button-secondary" href="{% url 'contacts:index' %}">Отмена</a>
+          <a class="button button-secondary" href="{% url 'contacts:index' %}{% if editing %}?source=database{% endif %}">Отмена</a>
           <button class="button button-primary" type="submit">
             <svg class="icon">
               <use href="#i-check"/>
             </svg>
-            Сохранить контакт
+            {% if editing %}Сохранить изменения{% else %}Сохранить контакт{% endif %}
           </button>
         </div>
       </form>

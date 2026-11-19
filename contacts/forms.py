@@ -1,4 +1,5 @@
 import re
+from dataclasses import fields
 from datetime import date
 
 from django import forms
@@ -38,9 +39,20 @@ class ContactForm(forms.Form):
         label="Заметка", required=False, max_length=1000,
         widget=forms.Textarea(attrs={"placeholder": "Например, где вы познакомились", "rows": 3}),
     )
-    file_format = forms.ChoiceField(
-        label="Формат файла", choices=(("xml", "XML"), ("json", "JSON")), initial="xml"
+    storage_target = forms.ChoiceField(
+        label="Куда сохранить", choices=(("file", "Файл XML / JSON"), ("database", "База данных SQLite")),
+        initial="file", required=False,
     )
+    file_format = forms.ChoiceField(
+        label="Формат файла", choices=(("xml", "XML"), ("json", "JSON")), initial="xml", required=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-select" if isinstance(field.widget, forms.Select) else "form-control"
+        self.fields["storage_target"].widget.attrs["data-storage-target"] = "true"
+        self.fields["file_format"].required = False
 
     def _clean_name(self, field_name):
         value = self.cleaned_data[field_name]
@@ -71,6 +83,10 @@ class ContactForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
+        if "storage_target" in self.fields:
+            cleaned["storage_target"] = cleaned.get("storage_target") or "file"
+            if cleaned["storage_target"] == "file" and not cleaned.get("file_format"):
+                self.add_error("file_format", "Выберите формат файла: XML или JSON.")
         if not cleaned.get("phone") and not cleaned.get("email"):
             raise forms.ValidationError("Укажите хотя бы один способ связи: телефон или email.")
         for field_name, value in list(cleaned.items()):
@@ -89,9 +105,18 @@ class ContactForm(forms.Form):
     def to_contact(self):
         if not self.is_valid():
             raise ValueError("Cannot create a contact from an invalid form.")
-        values = {key: value for key, value in self.cleaned_data.items() if key != "file_format"}
+        values = {field.name: self.cleaned_data[field.name] for field in fields(Contact)}
         values["birthday"] = values["birthday"].isoformat() if values["birthday"] else ""
         return Contact(**values)
+
+
+class ContactEditForm(ContactForm):
+    """The same server-side validation, without storage controls on edit."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        del self.fields["storage_target"]
+        del self.fields["file_format"]
 
 
 class UploadForm(forms.Form):

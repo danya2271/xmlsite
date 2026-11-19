@@ -42,6 +42,11 @@ class ContactFormTests(SimpleTestCase):
             with self.subTest(birthday=birthday):
                 self.assertFalse(self.form(birthday=birthday).is_valid())
 
+    def test_database_target_does_not_require_file_format(self):
+        form = ContactForm({**CONTACT.as_dict(), "storage_target": "database", "file_format": ""})
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["storage_target"], "database")
+
     def test_invalid_category_and_format(self):
         self.assertFalse(self.form(category="unknown").is_valid())
         self.assertFalse(self.form(file_format="html").is_valid())

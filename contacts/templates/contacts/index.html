@@ -79,10 +79,15 @@
     </div>
   {% endif %}
 
+  <nav class="source-tabs" aria-label="Источник контактов">
+    <a class="button {% if source == 'file' %}button-primary{% else %}button-secondary{% endif %}" href="?source=file">Файлы XML / JSON</a>
+    <a class="button {% if source == 'database' %}button-primary{% else %}button-secondary{% endif %}" href="?source=database">SQLite · {{ database_total }}</a>
+  </nav>
+
   <section class="contacts-panel panel">
     <div class="panel-heading">
       <div class="section-title">
-        <h2>Все контакты</h2>
+        <h2>{% if source == 'database' %}Контакты SQLite{% else %}Контакты из файлов{% endif %}</h2>
         <span class="count-badge">{{ total_contacts }}</span>
       </div>
 
@@ -101,7 +106,16 @@
       </details>
     </div>
 
+    {% if source == 'database' %}
+      <div class="filter-bar ajax-search-bar" role="search">
+        <div class="search-field"><svg class="icon"><use href="#i-search"/></svg><label class="visually-hidden" for="ajax-search">Поиск по SQLite</label><input id="ajax-search" type="search" maxlength="100" placeholder="Поиск по имени, телефону, компании…" data-search-url="{% url 'contacts:search' %}" aria-controls="ajax-results"></div>
+        <span data-search-status aria-live="polite"></span>
+      </div>
+      <div id="ajax-results" class="ajax-results" aria-live="polite"></div>
+    {% endif %}
+
     <form method="get" class="filter-bar" role="search">
+      <input type="hidden" name="source" value="{{ source }}">
       <div class="search-field">
         <svg class="icon">
           <use href="#i-search"/>
@@ -127,12 +141,12 @@
         {% endfor %}
       </select>
 
-      <label class="visually-hidden" for="format">Формат</label>
+      {% if source == 'file' %}<label class="visually-hidden" for="format">Формат</label>
       <select name="format" id="format">
         <option value="">Все форматы</option>
         <option value="xml" {% if selected_format == 'xml' %}selected{% endif %}>XML</option>
         <option value="json" {% if selected_format == 'json' %}selected{% endif %}>JSON</option>
-      </select>
+      </select>{% endif %}
 
       <button class="button button-secondary" type="submit">Найти</button>
     </form>
@@ -146,7 +160,7 @@
               <th scope="col">Контактные данные</th>
               <th scope="col">Компания / Город</th>
               <th scope="col">Группа</th>
-              <th scope="col">Файл</th>
+              <th scope="col">{% if source == 'database' %}Действия{% else %}Файл{% endif %}</th>
               <th scope="col">
                 <span class="visually-hidden">Подробности</span>
               </th>
@@ -197,13 +211,8 @@
                 </td>
 
                 <td>
-                  <a
-                    class="file-tag {{ row.file.file_format }}"
-                    href="{% url 'contacts:download' row.file.name %}"
-                    title="Скачать исходный файл {{ row.file.name }}"
-                  >
-                    {{ row.file.file_format|upper }}
-                  </a>
+                  {% if source == 'database' %}<span class="file-tag database-tag">SQLite</span>{% else %}
+                  <a class="file-tag {{ row.file.file_format }}" href="{% url 'contacts:download' row.file.name %}" title="Скачать исходный файл {{ row.file.name }}">{{ row.file.file_format|upper }}</a>{% endif %}
                 </td>
 
                 <td>
@@ -212,10 +221,11 @@
                     <div class="contact-popover">
                       <strong>{{ row.contact.full_name }}</strong>
                       <p>{{ row.contact.notes|default:'Заметок пока нет.'|linebreaksbr }}</p>
-                      <a href="{% url 'contacts:download' row.file.name %}">Скачать исходный файл</a>
+                      {% if source == 'database' %}<a href="{% url 'contacts:edit' row.record.pk %}">Редактировать контакт</a>{% else %}<a href="{% url 'contacts:download' row.file.name %}">Скачать исходный файл</a>{% endif %}
                     </div>
                   </details>
                 </td>
+                {% if source == 'database' %}<td class="row-actions"><a class="button button-secondary" href="{% url 'contacts:edit' row.record.pk %}">Изменить</a><form method="post" action="{% url 'contacts:delete' row.record.pk %}" onsubmit="return confirm('Удалить эту запись?');">{% csrf_token %}<button class="button button-danger" type="submit">Удалить</button></form></td>{% endif %}
               </tr>
             {% endfor %}
           </tbody>
@@ -294,7 +304,7 @@
   </section>
 
   <section class="bottom-grid">
-    <div class="panel file-library" id="files">
+    {% if source == 'file' %}<div class="panel file-library" id="files">
       <div class="panel-heading">
         <div class="section-title">
           <h2>Библиотека файлов</h2>
@@ -346,7 +356,7 @@
         <span class="tiny-dot"></span>
         Файлы хранятся в папке <code>data/contacts/</code>
       </div>
-    </div>
+    </div>{% else %}<div class="panel file-library"><div class="panel-heading"><h2>SQLite</h2><span class="count-badge">{{ database_total }}</span></div><div class="library-footer">Данные в базе доступны для поиска, изменения и удаления.</div></div>{% endif %}
 
     <div class="import-card">
       <div class="eyebrow">ПЕРЕНОСИТЕ БЕЗ ГРАНИЦ</div>

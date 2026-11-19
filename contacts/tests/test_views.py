@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from contacts.codecs import parse_contacts, serialize_contacts
 from contacts.storage import save_contact
+from contacts.models import ContactRecord
 
 from .helpers import CONTACT, StorageTestCase
 
@@ -21,6 +22,35 @@ class ViewTests(StorageTestCase):
         for name in ["contacts:create", "contacts:import"]:
             with self.subTest(name=name):
                 self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+
+    def test_database_create_duplicate_search_edit_delete(self):
+        payload = {**CONTACT.as_dict(), "storage_target": "database"}
+        response = self.client.post(reverse("contacts:create"), payload)
+        self.assertRedirects(response, f"{reverse('contacts:index')}?source=database")
+        self.assertEqual(ContactRecord.objects.count(), 1)
+        duplicate = self.client.post(reverse("contacts:create"), payload)
+        self.assertContains(duplicate, "уже присутствует")
+        self.assertEqual(ContactRecord.objects.count(), 1)
+        results = self.client.get(reverse("contacts:search"), {"q": "соколова"}).json()["results"]
+        self.assertEqual(results[0]["name"], CONTACT.full_name)
+        record = ContactRecord.objects.get()
+        edited = {**CONTACT.as_dict(), "first_name": "Мария", "phone": "", "email": "maria@example.com"}
+        response = self.client.post(reverse("contacts:edit", args=[record.pk]), edited)
+        self.assertRedirects(response, f"{reverse('contacts:index')}?source=database")
+        self.assertEqual(ContactRecord.objects.get().first_name, "Мария")
+        invalid = {**edited, "first_name": "123"}
+        self.assertContains(self.client.post(reverse("contacts:edit", args=[record.pk]), invalid), "Используйте буквы")
+        self.assertEqual(ContactRecord.objects.count(), 1)
+        response = self.client.post(reverse("contacts:delete", args=[record.pk]))
+        self.assertRedirects(response, f"{reverse('contacts:index')}?source=database")
+        self.assertEqual(ContactRecord.objects.count(), 0)
+
+    def test_database_source_and_ajax_return_valid_json(self):
+        ContactRecord.objects.create(**{**CONTACT.as_dict(), "birthday": "1998-04-12"})
+        response = self.client.get(reverse("contacts:index"), {"source": "database"})
+        self.assertContains(response, "Контакты SQLite")
+        self.assertContains(response, "SQLite")
+        self.assertEqual(self.client.get(reverse("contacts:search"), {"q": "ЕКАТЕРИНБУРГ"}).status_code, 200)
 
     def test_create_in_both_formats(self):
         for file_format in ["xml", "json"]:

@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from django.test import SimpleTestCase, override_settings
+from django.test import TestCase, override_settings
 
 from contacts.domain import Contact
 
@@ -19,7 +19,7 @@ CONTACT = Contact(
 )
 
 
-class StorageTestCase(SimpleTestCase):
+class StorageTestCase(TestCase):
     def setUp(self):
         super().setUp()
         self.temporary_directory = TemporaryDirectory()

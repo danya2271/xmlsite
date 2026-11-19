@@ -1,2 +1,4 @@
 Django>=5.2.8,<5.3
 defusedxml>=0.7.1,<0.8
+gunicorn>=23.0,<24
+whitenoise>=6.11,<7
